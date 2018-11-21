@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"syscall"
 	"time"
@@ -71,6 +72,15 @@ func watchGlob(reload chan bool, glob string) {
 	}
 }
 
+func killCMD(cmd exec.Cmd) {
+	if pgid, err := syscall.Getpgid(cmd.Process.Pid); err == nil {
+		fmt.Printf("kill server %d\n", cmd.Process.Pid)
+		syscall.Kill(-pgid, syscall.SIGKILL)
+	} else {
+		fmt.Println(err)
+	}
+}
+
 // RunCMDAndWatch create new child process
 // and monit it
 func RunCMDAndWatch(name string, cmdArgs []string, watchGlobPattern string) <-chan int {
@@ -82,21 +92,26 @@ func RunCMDAndWatch(name string, cmdArgs []string, watchGlobPattern string) <-ch
 	go CMDLogHandler(pid, cmd)
 	go watchGlob(reload, watchGlobPattern)
 
+	sig := make(chan os.Signal)
+	signal.Notify(sig, os.Kill)
+	signal.Notify(sig, os.Interrupt)
 	go func() {
 		for {
-			<-reload
-			fmt.Println("Reload.....")
-			if pgid, err := syscall.Getpgid(cmd.Process.Pid); err == nil {
-				fmt.Printf("kill server %d\n", cmd.Process.Pid)
-				syscall.Kill(-pgid, syscall.SIGKILL)
-			} else {
-				fmt.Println(err)
+			select {
+			case <-sig:
+				killCMD(*cmd)
+				os.Exit(0)
+				continue
+			case <-reload:
+				fmt.Println("Reload.....")
+				killCMD(*cmd)
+				cmd = exec.Command(name, cmdArgs...)
+				cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+				go CMDLogHandler(pid, cmd)
 			}
-			cmd = exec.Command(name, cmdArgs...)
-			cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-			go CMDLogHandler(pid, cmd)
 		}
 	}()
+
 	return pid
 }
 
@@ -106,5 +121,6 @@ func RunCMDAndWatch(name string, cmdArgs []string, watchGlobPattern string) <-ch
 func Monit(glob string, entry string) <-chan int {
 	fmt.Printf("Watch files: %s\n", glob)
 	fmt.Printf("Run entrypoint at: %s\n\n", entry)
+
 	return RunCMDAndWatch("go", []string{"run", entry}, glob)
 }
