@@ -10,3 +10,9 @@ Minimal Golang process auto reload by glob watcher
 ```
 $ gorogoso -watch="**/*.go" -entry="main.go"
 ```
+
+
+# Build from source
+```
+$ make build
+```
