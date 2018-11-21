@@ -1,4 +1,4 @@
-package main
+package gorogoso
 
 import (
 	"io/ioutil"
@@ -21,7 +21,7 @@ func TestWatcher(t *testing.T) {
 		next := []byte("// hi")
 		newfile := append(b, next...)
 
-		pid := GoroGoso(watchPathPattern, entryfilePath)
+		pid := Monit(watchPathPattern, entryfilePath)
 		PID := <-pid
 		t.Logf("first reload %d", PID)
 		go func() {

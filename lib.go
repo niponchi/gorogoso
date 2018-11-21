@@ -1,14 +1,12 @@
-package main
+package gorogoso
 
 import (
 	"bytes"
-	"flag"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"syscall"
 	"time"
@@ -96,32 +94,12 @@ func runCMDAndWatch(reload chan bool, name string, cmdArgs []string, watchGlobPa
 	return pid
 }
 
-// GoroGoso watch file by glob and
+// Monit watch file by glob and
 // reload entry file
 // everytime on change
-func GoroGoso(glob string, entry string) <-chan int {
+func Monit(glob string, entry string) <-chan int {
 	reload := make(chan bool)
 	fmt.Printf("Watch files: %s\n", glob)
 	fmt.Printf("Run entrypoint at: %s\n\n", entry)
 	return runCMDAndWatch(reload, "go", []string{"run", entry}, glob)
-}
-
-func main() {
-
-	watchPattern := flag.String("watch", "*.go", "Glob pattern you want to watch")
-	entryfile := flag.String("entry", "main.go", "entryfile path")
-	flag.Parse()
-
-	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
-	if err != nil {
-		log.Fatal(err)
-	}
-	watchPathPattern := path.Join(dir, *watchPattern)
-	entryfilePath := path.Join(dir, *entryfile)
-
-	pid := GoroGoso(watchPathPattern, entryfilePath)
-	for {
-		<-pid
-	}
-
 }
