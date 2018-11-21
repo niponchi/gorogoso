@@ -14,7 +14,9 @@ import (
 	"github.com/radovskyb/watcher"
 )
 
-func cmdLogHandler(pid chan int, cmd *exec.Cmd) {
+// CMDLogHandler handle result std output
+// from os.Process
+func CMDLogHandler(pid chan int, cmd *exec.Cmd) {
 
 	stdoutIn, _ := cmd.StdoutPipe()
 	stderrIn, _ := cmd.StderrPipe()
@@ -41,7 +43,7 @@ func cmdLogHandler(pid chan int, cmd *exec.Cmd) {
 
 }
 
-func watchGlob(evn chan bool, glob string) {
+func watchGlob(reload chan bool, glob string) {
 	w := watcher.New()
 	go func() {
 		for {
@@ -49,7 +51,7 @@ func watchGlob(evn chan bool, glob string) {
 			select {
 			case event := <-w.Event:
 				fmt.Println(event)
-				evn <- true
+				reload <- true
 			case <-w.Closed:
 				return
 			}
@@ -69,17 +71,21 @@ func watchGlob(evn chan bool, glob string) {
 	}
 }
 
-func runCMDAndWatch(reload chan bool, name string, cmdArgs []string, watchGlobPattern string) <-chan int {
+// RunCMDAndWatch create new child process
+// and monit it
+func RunCMDAndWatch(name string, cmdArgs []string, watchGlobPattern string) <-chan int {
+	reload := make(chan bool)
 	pid := make(chan int)
 
 	cmd := exec.Command(name, cmdArgs...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-	go cmdLogHandler(pid, cmd)
+	go CMDLogHandler(pid, cmd)
 	go watchGlob(reload, watchGlobPattern)
 
 	go func() {
 		for {
 			<-reload
+			fmt.Println("Reload.....")
 			if pgid, err := syscall.Getpgid(cmd.Process.Pid); err == nil {
 				fmt.Printf("kill server %d\n", cmd.Process.Pid)
 				syscall.Kill(-pgid, syscall.SIGKILL)
@@ -88,7 +94,7 @@ func runCMDAndWatch(reload chan bool, name string, cmdArgs []string, watchGlobPa
 			}
 			cmd = exec.Command(name, cmdArgs...)
 			cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-			go cmdLogHandler(pid, cmd)
+			go CMDLogHandler(pid, cmd)
 		}
 	}()
 	return pid
@@ -98,8 +104,7 @@ func runCMDAndWatch(reload chan bool, name string, cmdArgs []string, watchGlobPa
 // reload entry file
 // everytime on change
 func Monit(glob string, entry string) <-chan int {
-	reload := make(chan bool)
 	fmt.Printf("Watch files: %s\n", glob)
 	fmt.Printf("Run entrypoint at: %s\n\n", entry)
-	return runCMDAndWatch(reload, "go", []string{"run", entry}, glob)
+	return RunCMDAndWatch("go", []string{"run", entry}, glob)
 }
