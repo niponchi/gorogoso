@@ -1,4 +1,4 @@
-# Goro Goso 🧟‍♂️
+# Goro Goso 🧟‍
 Minimal Golang process auto reload by glob watcher
 
 
