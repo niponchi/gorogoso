@@ -2,11 +2,12 @@ package main
 
 import (
 	"flag"
-	"gorogoso"
 	"log"
 	"os"
 	"path"
 	"path/filepath"
+
+	"github.com/zapkub/gorogoso/runner"
 )
 
 func main() {
@@ -21,7 +22,7 @@ func main() {
 	watchPathPattern := path.Join(dir, *watchPattern)
 	entryfilePath := path.Join(dir, *entryfile)
 
-	pid := gorogoso.Monit(watchPathPattern, entryfilePath)
+	pid := runner.Monit(watchPathPattern, entryfilePath)
 	for {
 		<-pid
 	}

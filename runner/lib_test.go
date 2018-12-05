@@ -1,4 +1,4 @@
-package gorogoso
+package runner
 
 import (
 	"io/ioutil"

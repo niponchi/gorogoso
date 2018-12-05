@@ -6,7 +6,7 @@ help:
 	go build
 	./goro-goso --help
 run:
-	go build  -o gorogoso cmd/main.go
+	go build -o gorogoso main.go
 	./gorogoso -watch=test/*.go -entry=test/main.go
 
 build:
