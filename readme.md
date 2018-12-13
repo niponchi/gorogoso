@@ -10,9 +10,17 @@ Minimal Golang process auto reload by glob watcher
 ```
 $ gorogoso -watch="**/*.go" -entry="main.go"
 ```
+### Also support multiple globs
+```
+$ gorogoso -watch"test/**/*.go,lib/**/*.go"
+```
 
 
 # Build from source
 ```
 $ make build
 ```
+
+
+# Todo
+- ignore path args
