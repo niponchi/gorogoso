@@ -11,10 +11,10 @@ func TestWatcher(t *testing.T) {
 	_, filename, _, _ := runtime.Caller(0)
 	t.Log("Current test filename: " + filename)
 
-	watchPathPattern := path.Join(path.Dir(filename), "test/*.go")
-	entryfilePath := path.Join(path.Dir(filename), "test/main.go")
+	watchPathPattern := path.Join(path.Dir(filename), "../test/*.go")
+	entryfilePath := path.Join(path.Dir(filename), "../test/main.go")
 
-	if b, err := ioutil.ReadFile("test/main.go"); err != nil {
+	if b, err := ioutil.ReadFile(entryfilePath); err != nil {
 		panic(err)
 	} else {
 
@@ -26,7 +26,7 @@ func TestWatcher(t *testing.T) {
 		t.Logf("first reload %d", PID)
 		go func() {
 			t.Log("Update file...")
-			if err := ioutil.WriteFile("test/main.go", newfile, 0644); err != nil {
+			if err := ioutil.WriteFile(entryfilePath, newfile, 0644); err != nil {
 				panic(err)
 			}
 		}()
@@ -38,7 +38,7 @@ func TestWatcher(t *testing.T) {
 			t.Logf("second reload %d", PID2)
 		}
 		t.Log("Rollback file....")
-		if err := ioutil.WriteFile("test/main.go", b, 0644); err != nil {
+		if err := ioutil.WriteFile(entryfilePath, b, 0644); err != nil {
 			panic(err)
 		}
 

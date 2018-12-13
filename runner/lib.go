@@ -8,10 +8,11 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
-	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
+	"github.com/bmatcuk/doublestar"
 	"github.com/radovskyb/watcher"
 )
 
@@ -35,7 +36,7 @@ func CMDLogHandler(pid chan int, cmd *exec.Cmd) {
 	}()
 
 	err := cmd.Start()
-	fmt.Printf("Reload... pid %d\n\n", cmd.Process.Pid)
+	fmt.Printf("[gorogoso] Reload... pid %d\n\n", cmd.Process.Pid)
 	pid <- cmd.Process.Pid
 	cmd.Wait()
 	if err != nil {
@@ -51,7 +52,8 @@ func watchGlob(reload chan bool, glob string) {
 			time.Sleep(1000 * time.Millisecond)
 			select {
 			case event := <-w.Event:
-				fmt.Println(event)
+				fmt.Printf("\n[gosogoso] watcher tigger...\n")
+				fmt.Printf("[gorogoso] %s\n", event)
 				reload <- true
 			case <-w.Closed:
 				return
@@ -61,12 +63,18 @@ func watchGlob(reload chan bool, glob string) {
 
 	w.SetMaxEvents(1)
 	w.FilterOps(watcher.Write)
-	paths, _ := filepath.Glob(glob)
-	for _, path := range paths {
-		if err := w.Add(path); err != nil {
-			panic(err)
+	globList := strings.Split(glob, ",")
+	fmt.Println("[gorogoso] watch file list")
+	for _, g := range globList {
+		paths, _ := doublestar.Glob(g)
+		for _, path := range paths {
+			fmt.Println(path)
+			if err := w.Add(path); err != nil {
+				panic(err)
+			}
 		}
 	}
+
 	if err := w.Start(time.Millisecond * 100); err != nil {
 		log.Fatalln(err)
 	}
@@ -74,7 +82,7 @@ func watchGlob(reload chan bool, glob string) {
 
 func killCMD(cmd exec.Cmd) {
 	if pgid, err := syscall.Getpgid(cmd.Process.Pid); err == nil {
-		fmt.Printf("kill server %d\n", cmd.Process.Pid)
+		fmt.Printf("[gorogoso] kill server %d\n", cmd.Process.Pid)
 		syscall.Kill(-pgid, syscall.SIGKILL)
 	} else {
 		fmt.Println(err)
@@ -103,7 +111,7 @@ func RunCMDAndWatch(name string, cmdArgs []string, watchGlobPattern string) <-ch
 				os.Exit(0)
 				continue
 			case <-reload:
-				fmt.Println("Reload.....")
+				fmt.Println("[gorogoso] Reload.....")
 				killCMD(*cmd)
 				cmd = exec.Command(name, cmdArgs...)
 				cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}

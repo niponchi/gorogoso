@@ -2,14 +2,27 @@
 
 
 [[projects]]
+  digest = "1:d0cc4a5bd7f183727fa68f58cb969413aaf6cbb8824c36b4fdbd729a4e98c937"
+  name = "github.com/bmatcuk/doublestar"
+  packages = ["."]
+  pruneopts = ""
+  revision = "85a78806aa1b4707d1dbace9be592cf1ece91ab3"
+  version = "v1.1.1"
+
+[[projects]]
+  digest = "1:e8c890f02385a873e25389469feabb07fb7d11f669e5197665833241abc03f51"
   name = "github.com/radovskyb/watcher"
   packages = ["."]
+  pruneopts = ""
   revision = "6145e1439b9de93806925353403f91d2abbad8a5"
   version = "v1.0.2"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "cfe672ccf514423232142b94c31e5bd883432bcbe65ea2437e5a8a1077350ff1"
+  input-imports = [
+    "github.com/bmatcuk/doublestar",
+    "github.com/radovskyb/watcher",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1
